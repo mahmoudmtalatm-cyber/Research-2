@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Research 2</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+  /* ─── Reset & Base ───────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --parchment:   #F2E8D5;
+    --parchment-d: #E8D9BC;
+    --cream:       #FBF7F0;
+    --sage:        #7A9E76;
+    --sage-d:      #5C7A58;
+    --ink:         #3D3427;
+    --ink-l:       #6B5F50;
+    --terracotta:  #C4876A;
+    --terra-d:     #A06848;
+    --wax:         #8B3A3A;
+    --envelope:    #C9A87A;
+    --envelope-d:  #A8825A;
+    --shadow:      rgba(61,52,39,0.18);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    background: radial-gradient(ellipse at 40% 30%, #D4C4A8 0%, #B8A882 40%, #9C8D6A 100%);
+    font-family: 'Lato', sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  /* ─── Paper texture overlay ──────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── Scene wrapper ──────────────────────────────────────── */
+  #scene {
+    position: relative;
+    width: min(680px, 100%);
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     ENVELOPE
+  ══════════════════════════════════════════════════════════ */
+  #envelope-wrap {
+    position: relative;
+    width: 100%;
+    transition: transform 0.6s ease, opacity 0.6s ease, max-height 0.6s ease;
+    overflow: hidden;
+  }
+
+  #envelope-wrap.gone {
+    max-height: 0 !important;
+    opacity: 0;
+    pointer-events: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  #envelope {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1.618 / 1;
+    background: var(--envelope);
+    border-radius: 4px;
+    box-shadow: 0 20px 60px var(--shadow), 0 4px 12px rgba(0,0,0,0.15);
+    cursor: pointer;
+    overflow: visible;
+    perspective: 800px;
+  }
+
+  /* Envelope body lines */
+  #envelope::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(135deg, var(--envelope-d) 0 49.5%, transparent 50%),
+      linear-gradient(225deg, var(--envelope-d) 0 49.5%, transparent 50%);
+    border-radius: 4px;
+  }
+
+  /* Bottom triangle */
+  #env-bottom {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 55%;
+    background: var(--envelope);
+    clip-path: polygon(0 100%, 50% 0%, 100% 100%);
+    border-radius: 0 0 4px 4px;
+  }
+
+  /* Flap */
+  #env-flap {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 55%;
+    background: linear-gradient(160deg, #D4A96A 0%, var(--envelope) 60%);
+    clip-path: polygon(0 0, 50% 100%, 100% 0);
+    transform-origin: top center;
+    transform-style: preserve-3d;
+    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 4;
+    border-radius: 4px 4px 0 0;
+  }
+
+  #envelope.open #env-flap {
+    transform: rotateX(-180deg);
+  }
+
+  /* Wax seal */
+  #wax-seal {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 64px; height: 64px;
+    background: radial-gradient(circle at 40% 35%, #B04848, var(--wax) 55%, #6B2828);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.35), inset 0 1px 3px rgba(255,255,255,0.15);
+    z-index: 5;
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: rgba(255,255,255,0.82);
+    letter-spacing: 1px;
+    transition: opacity 0.3s;
+    user-select: none;
+  }
+
+  #envelope.open #wax-seal {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Hint text */
+  #env-hint {
+    position: absolute;
+    bottom: -36px; left: 0; right: 0;
+    text-align: center;
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--ink-l);
+    opacity: 0.85;
+    letter-spacing: 0.5px;
+    animation: fadeHint 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes fadeHint {
+    from { opacity: 0.5; } to { opacity: 1; }
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     LETTER / MAIN UI
+  ══════════════════════════════════════════════════════════ */
+  #letter {
+    display: none;
+    width: 100%;
+    background: var(--cream);
+    border-radius: 3px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    z-index: 3;
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+    transition:
+      transform 0.8s cubic-bezier(0.34, 1.2, 0.64, 1),
+      opacity 0.5s ease;
+    /* Lined paper */
+    background-image:
+      repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent 31px,
+        rgba(161,140,110,0.18) 32px
+      );
+    background-size: 100% 32px;
+    background-position: 0 56px;
+  }
+
+  #letter.risen {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  /* Left margin red line */
+  #letter::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 56px;
+    width: 1.5px;
+    background: rgba(196,135,106,0.35);
+    border-radius: 1px;
+  }
+
+  .letter-inner {
+    padding: 48px 40px 48px 72px;
+  }
+
+  /* ─── Header ─────────────────────────────────────────────── */
+  .letter-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    border-bottom: 1.5px solid var(--parchment-d);
+    padding-bottom: 20px;
+  }
+
+  .letter-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+
+  .letter-title span {
+    display: block;
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--ink-l);
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  .letter-date {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-l);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* ─── Track list ─────────────────────────────────────────── */
+  .track-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .track-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    background: rgba(242,232,213,0.55);
+    border: 1.5px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    position: relative;
+  }
+
+  .track-item:hover {
+    background: rgba(242,232,213,0.9);
+    border-color: var(--sage);
+  }
+
+  .track-item.active {
+    background: var(--parchment);
+    border-color: var(--sage-d);
+    box-shadow: 0 2px 10px rgba(90,122,88,0.18);
+  }
+
+  .track-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--terracotta);
+    min-width: 28px;
+    text-align: center;
+    line-height: 1;
+  }
+
+  .track-info {
+    flex: 1;
+  }
+
+  .track-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .track-meta {
+    font-size: 11.5px;
+    color: var(--ink-l);
+    margin-top: 2px;
+    font-style: italic;
+  }
+
+  .track-pdf-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    background: var(--terracotta);
+    color: white;
+    border-radius: 2px;
+    padding: 2px 7px;
+    opacity: 0.85;
+    text-transform: uppercase;
+  }
+
+  .track-play-btn {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--sage);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, transform 0.15s;
+    flex-shrink: 0;
+    color: white;
+  }
+
+  .track-play-btn:hover { background: var(--sage-d); transform: scale(1.08); }
+
+  /* ─── Player ─────────────────────────────────────────────── */
+  #player-section {
+    background: var(--parchment);
+    border: 1.5px solid var(--parchment-d);
+    border-radius: 4px;
+    padding: 24px;
+    display: none;
+  }
+
+  #player-section.visible { display: block; }
+
+  .player-now-playing {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 12px;
+    color: var(--ink-l);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .player-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 18px;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    position: relative;
+    margin-bottom: 8px;
+  }
+
+  #progress-bar {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--parchment-d);
+    cursor: pointer;
+    outline: none;
+  }
+
+  #progress-bar::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--terracotta);
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    transition: transform 0.15s;
+  }
+
+  #progress-bar::-webkit-slider-thumb:hover { transform: scale(1.25); }
+
+  #progress-bar::-moz-range-thumb {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--terracotta);
+    cursor: pointer;
+    border: none;
+  }
+
+  .time-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--ink-l);
+    margin-bottom: 18px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Skip buttons row */
+  .skip-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .skip-btn {
+    background: none;
+    border: 1.5px solid var(--parchment-d);
+    border-radius: 20px;
+    padding: 5px 11px;
+    font-size: 11px;
+    font-family: 'Lato', sans-serif;
+    font-weight: 700;
+    color: var(--ink-l);
+    cursor: pointer;
+    transition: all 0.18s;
+    white-space: nowrap;
+  }
+
+  .skip-btn:hover {
+    border-color: var(--sage);
+    color: var(--sage-d);
+    background: rgba(122,158,118,0.08);
+  }
+
+  .skip-divider {
+    width: 1px; height: 20px;
+    background: var(--parchment-d);
+    margin: 0 4px;
+  }
+
+  /* Main controls */
+  .controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .ctrl-btn {
+    border: none;
+    cursor: pointer;
+    background: none;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s, opacity 0.15s;
+    color: var(--ink);
+  }
+
+  .ctrl-btn:hover { opacity: 0.7; transform: scale(1.1); }
+
+  .ctrl-btn.play-pause {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--sage);
+    color: white;
+    box-shadow: 0 4px 14px rgba(92,122,88,0.4);
+  }
+
+  .ctrl-btn.play-pause:hover { background: var(--sage-d); opacity: 1; }
+
+  /* Speed control */
+  .speed-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .speed-label {
+    font-size: 11px;
+    color: var(--ink-l);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .speed-btn {
+    border: 1.5px solid var(--parchment-d);
+    background: none;
+    border-radius: 14px;
+    padding: 4px 11px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink-l);
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+
+  .speed-btn:hover { border-color: var(--terracotta); color: var(--terra-d); }
+  .speed-btn.active {
+    background: var(--terracotta);
+    border-color: var(--terracotta);
+    color: white;
+  }
+
+  .speed-custom-wrap {
+    display: flex; align-items: center; gap: 5px;
+  }
+
+  #speed-slider {
+    -webkit-appearance: none;
+    width: 90px; height: 4px;
+    border-radius: 2px;
+    background: var(--parchment-d);
+    outline: none;
+    cursor: pointer;
+  }
+
+  #speed-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    background: var(--terracotta);
+    cursor: pointer;
+  }
+
+  #speed-display {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--terracotta);
+    min-width: 30px;
+    text-align: right;
+  }
+
+  /* ─── PDF Viewer ─────────────────────────────────────────── */
+  #pdf-section {
+    margin-top: 24px;
+    display: none;
+  }
+
+  #pdf-section.visible { display: block; }
+
+  .pdf-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .pdf-icon {
+    width: 32px; height: 32px;
+    background: var(--terracotta);
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Lato', sans-serif;
+    letter-spacing: 0.5px;
+  }
+
+  .pdf-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    flex: 1;
+  }
+
+  .pdf-close {
+    background: none;
+    border: 1.5px solid var(--parchment-d);
+    border-radius: 50%;
+    width: 28px; height: 28px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink-l);
+    transition: all 0.15s;
+  }
+
+  .pdf-close:hover { border-color: var(--terracotta); color: var(--terracotta); }
+
+  #pdf-frame {
+    width: 100%;
+    height: 520px;
+    border: 1.5px solid var(--parchment-d);
+    border-radius: 3px;
+    background: white;
+  }
+
+  .pdf-placeholder {
+    width: 100%;
+    height: 240px;
+    border: 2px dashed var(--parchment-d);
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink-l);
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 15px;
+    gap: 8px;
+  }
+
+  .pdf-placeholder svg { opacity: 0.4; }
+
+  /* ─── Footer ─────────────────────────────────────────────── */
+  .letter-footer {
+    margin-top: 28px;
+    padding-top: 16px;
+    border-top: 1.5px solid var(--parchment-d);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 12px;
+    color: var(--ink-l);
+  }
+
+  /* ─── Animations ─────────────────────────────────────────── */
+  @keyframes slideUp {
+    from { transform: translateY(20px) scale(0.97); opacity: 0; }
+    to   { transform: translateY(0) scale(1);       opacity: 1; }
+  }
+
+  @media (max-width: 600px) {
+    body { padding: 12px; align-items: flex-start; padding-top: 20px; }
+    #scene, #envelope-wrap, #envelope { width: 100%; }
+    .letter-inner { padding: 28px 16px 28px 36px; }
+    #letter::before { left: 24px; }
+    #pdf-frame { height: 300px; }
+    .skip-row { gap: 3px; }
+    .skip-btn { padding: 4px 7px; font-size: 10px; }
+    .letter-title { font-size: 20px; }
+    .speed-row { gap: 5px; }
+    #speed-slider { width: 60px; }
+  }
+
+  @media (max-width: 400px) {
+    .letter-inner { padding: 20px 12px 20px 28px; }
+    .letter-title { font-size: 18px; }
+    .controls-row { gap: 10px; }
+    .skip-btn { padding: 3px 6px; font-size: 9px; }
+  }
+
+  /* hidden audio element */
+  #hidden-audio { display: none; }
+</style>
+</head>
+<body>
+
+<div id="scene">
+
+  <!-- ══ Envelope ══ -->
+  <div id="envelope-wrap">
+    <div id="envelope" onclick="openEnvelope()">
+      <div id="env-bottom"></div>
+      <div id="env-flap"></div>
+      <div id="wax-seal">✦</div>
+    </div>
+    <div id="env-hint">Click to open the letter</div>
+  </div>
+
+  <!-- ══ Letter / Main UI ══ -->
+  <div id="letter">
+    <div class="letter-inner">
+
+      <!-- Header -->
+      <div class="letter-header">
+        <div class="letter-title">
+          Research 2
+          <span>A collection of audio &amp; readings</span>
+        </div>
+        <div class="letter-date" id="letter-date"></div>
+      </div>
+
+      <!-- Track List -->
+      <div class="track-list" id="track-list">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Player -->
+      <div id="player-section">
+        <div class="player-now-playing">Now playing</div>
+        <div class="player-title" id="player-track-name">—</div>
+
+        <!-- Progress -->
+        <div class="progress-wrap">
+          <input type="range" id="progress-bar" min="0" max="100" value="0" step="0.1"/>
+        </div>
+        <div class="time-row">
+          <span id="time-current">0:00</span>
+          <span id="time-total">0:00</span>
+        </div>
+
+        <!-- Skip buttons -->
+        <div class="skip-row">
+          <button class="skip-btn" onclick="skip(-30)">−30s</button>
+          <button class="skip-btn" onclick="skip(-15)">−15s</button>
+          <button class="skip-btn" onclick="skip(-10)">−10s</button>
+          <div class="skip-divider"></div>
+          <button class="skip-btn" onclick="skip(10)">+10s</button>
+          <button class="skip-btn" onclick="skip(15)">+15s</button>
+          <button class="skip-btn" onclick="skip(30)">+30s</button>
+        </div>
+
+        <!-- Main controls -->
+        <div class="controls-row">
+          <button class="ctrl-btn" onclick="prevTrack()" title="Previous">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/>
+            </svg>
+          </button>
+          <button class="ctrl-btn play-pause" id="play-pause-btn" onclick="togglePlay()">
+            <svg id="play-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            <svg id="pause-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="display:none">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+            </svg>
+          </button>
+          <button class="ctrl-btn" onclick="nextTrack()" title="Next">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 18l8.5-6L6 6v12zm2.5-6 5.5 3.9V8.1L8.5 12zM16 6v12h2V6h-2z"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Speed -->
+        <div class="speed-row">
+          <span class="speed-label">Speed</span>
+          <button class="speed-btn" onclick="setSpeed(0.75)">0.75×</button>
+          <button class="speed-btn active" onclick="setSpeed(1)">1×</button>
+          <button class="speed-btn" onclick="setSpeed(1.5)">1.5×</button>
+          <button class="speed-btn" onclick="setSpeed(2)">2×</button>
+          <div class="speed-custom-wrap">
+            <input type="range" id="speed-slider" min="0.25" max="5" step="0.05" value="1" oninput="setSpeedSlider(this.value)"/>
+            <span id="speed-display">1×</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PDF Section -->
+      <div id="pdf-section">
+        <div class="pdf-header">
+          <div class="pdf-icon">PDF</div>
+          <div class="pdf-title" id="pdf-title">Reading</div>
+          <button class="pdf-close" onclick="closePDF()" title="Close PDF">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
+        <div id="pdf-container"></div>
+      </div>
+
+      <!-- Footer -->
+      <div class="letter-footer">
+        <span>Research 2</span>
+        <span>✦</span>
+        <span id="footer-count"></span>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<audio id="hidden-audio" preload="metadata"></audio>
+
+<script>
+// ──────────────────────────────────────────────────────────────
+//  CONFIGURATION — Add folder names here.
+//  Each folder should be placed next to index.html and contain:
+//    - An audio file (any name ending in .mp3 or .wav)
+//    - Optionally a PDF file (any name ending in .pdf)
+//  The folder name becomes the track title.
+// ──────────────────────────────────────────────────────────────
+const FOLDERS = [
+  "Morning Reflections",
+  "Evening Meditation",
+  "Sunday Sermon",
+  "Instrumental Interlude"
+];
+
+// Audio and PDF extensions to look for (in order of preference)
+const AUDIO_EXTS = ["mp3", "wav", "ogg", "m4a"];
+const PDF_EXT    = "pdf";
+
+// Build TRACKS from folder names.
+// Convention: the audio file is named the same as the folder,
+// and so is the PDF (if present). E.g. folder "Morning Reflections"
+// expects "Morning Reflections/Morning Reflections.mp3"
+// and optionally "Morning Reflections/Morning Reflections.pdf"
+//
+// You can override this per-entry by adding { folder, audioFile, pdfFile }:
+//   { folder: "Morning Reflections", audioFile: "audio.mp3", pdfFile: "notes.pdf" }
+//
+function buildTracks(folders) {
+  return folders.map(entry => {
+    if (typeof entry === 'string') {
+      const name = entry;
+      return {
+        title:    name,
+        file:     `${name}/${name}.mp3`,
+        pdf:      `${name}/${name}.pdf`,   // set to null if no PDF expected
+        duration: "—"
+      };
+    } else {
+      return {
+        title:    entry.folder,
+        file:     `${entry.folder}/${entry.audioFile || entry.folder + '.mp3'}`,
+        pdf:      entry.pdfFile ? `${entry.folder}/${entry.pdfFile}` : null,
+        duration: "—"
+      };
+    }
+  });
+}
+
+const TRACKS = buildTracks(FOLDERS);
+
+// ──────────────────────────────────────────────────────────────
+let currentIndex   = -1;
+let isPlaying      = false;
+const audio        = document.getElementById('hidden-audio');
+const playIcon     = document.getElementById('play-icon');
+const pauseIcon    = document.getElementById('pause-icon');
+const progressBar  = document.getElementById('progress-bar');
+const timeCurrent  = document.getElementById('time-current');
+const timeTotal    = document.getElementById('time-total');
+const playerSection = document.getElementById('player-section');
+const pdfSection   = document.getElementById('pdf-section');
+
+// ── Date ──────────────────────────────────────────────────────
+document.getElementById('letter-date').textContent =
+  new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+
+document.getElementById('footer-count').textContent =
+  `${TRACKS.length} recording${TRACKS.length !== 1 ? 's' : ''}`;
+
+// ── Render track list ─────────────────────────────────────────
+function renderTracks() {
+  const list = document.getElementById('track-list');
+  list.innerHTML = '';
+  TRACKS.forEach((t, i) => {
+    const item = document.createElement('div');
+    item.className = 'track-item';
+    item.id = `track-${i}`;
+    item.innerHTML = `
+      <div class="track-num">${String(i+1).padStart(2,'0')}</div>
+      <div class="track-info">
+        <div class="track-name">${t.title}</div>
+        <div class="track-meta">${t.duration}${t.pdf ? ' · includes reading' : ''}</div>
+      </div>
+      ${t.pdf ? '<div class="track-pdf-badge">PDF</div>' : ''}
+      <button class="track-play-btn" onclick="loadTrack(${i}, true); event.stopPropagation();" title="Play">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+    `;
+    item.addEventListener('click', () => loadTrack(i, false));
+    list.appendChild(item);
+  });
+}
+
+renderTracks();
+
+// ── Envelope animation ────────────────────────────────────────
+function openEnvelope() {
+  const env = document.getElementById('envelope');
+  const wrap = document.getElementById('envelope-wrap');
+  const letter = document.getElementById('letter');
+
+  env.classList.add('open');
+
+  setTimeout(() => {
+    letter.style.display = 'block';
+    // trigger reflow
+    letter.getBoundingClientRect();
+    letter.classList.add('risen');
+    // Scroll to top of letter smoothly
+    setTimeout(() => letter.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  }, 500);
+
+  setTimeout(() => {
+    wrap.classList.add('gone');
+  }, 900);
+}
+
+// ── Load track ────────────────────────────────────────────────
+function loadTrack(index, autoplay) {
+  // Mark active
+  document.querySelectorAll('.track-item').forEach(el => el.classList.remove('active'));
+  document.getElementById(`track-${index}`).classList.add('active');
+
+  currentIndex = index;
+  const t = TRACKS[index];
+
+  audio.src = t.file;
+  document.getElementById('player-track-name').textContent = t.title;
+  playerSection.classList.add('visible');
+
+  progressBar.value = 0;
+  timeCurrent.textContent = '0:00';
+  timeTotal.textContent = '—';
+
+  audio.load();
+
+  if (autoplay) {
+    audio.play().then(() => {
+      isPlaying = true;
+      updatePlayBtn();
+    }).catch(() => {});
+  } else {
+    isPlaying = false;
+    updatePlayBtn();
+  }
+
+  // Load PDF — check it exists first
+  if (t.pdf) {
+    fetch(t.pdf, { method: 'HEAD' })
+      .then(r => { if (r.ok) openPDF(t.pdf, t.title); else closePDF(); })
+      .catch(() => closePDF());
+  } else {
+    closePDF();
+  }
+}
+
+// ── Play / Pause ──────────────────────────────────────────────
+function togglePlay() {
+  if (currentIndex < 0) { loadTrack(0, true); return; }
+  if (isPlaying) {
+    audio.pause();
+    isPlaying = false;
+  } else {
+    audio.play().catch(() => {});
+    isPlaying = true;
+  }
+  updatePlayBtn();
+}
+
+function updatePlayBtn() {
+  playIcon.style.display  = isPlaying ? 'none'  : 'block';
+  pauseIcon.style.display = isPlaying ? 'block' : 'none';
+}
+
+// ── Skip ──────────────────────────────────────────────────────
+function skip(sec) {
+  if (!audio.src) return;
+  audio.currentTime = Math.min(Math.max(0, audio.currentTime + sec), audio.duration || 0);
+}
+
+// ── Prev / Next ───────────────────────────────────────────────
+function prevTrack() {
+  if (currentIndex <= 0) return;
+  loadTrack(currentIndex - 1, isPlaying);
+}
+function nextTrack() {
+  if (currentIndex >= TRACKS.length - 1) return;
+  loadTrack(currentIndex + 1, isPlaying);
+}
+
+// ── Speed ─────────────────────────────────────────────────────
+function setSpeed(val) {
+  audio.playbackRate = val;
+  document.getElementById('speed-slider').value = val;
+  document.getElementById('speed-display').textContent = val + '×';
+  document.querySelectorAll('.speed-btn').forEach(b => {
+    b.classList.toggle('active', parseFloat(b.textContent) === val);
+  });
+}
+
+function setSpeedSlider(val) {
+  const v = parseFloat(val);
+  audio.playbackRate = v;
+  document.getElementById('speed-display').textContent = v.toFixed(2) + '×';
+  document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+}
+
+// ── Progress bar ──────────────────────────────────────────────
+audio.addEventListener('timeupdate', () => {
+  if (!audio.duration) return;
+  const pct = (audio.currentTime / audio.duration) * 100;
+  progressBar.value = pct;
+  timeCurrent.textContent = fmt(audio.currentTime);
+  timeTotal.textContent   = fmt(audio.duration);
+  // Update track duration display
+  if (TRACKS[currentIndex] && TRACKS[currentIndex].duration === '—') {
+    TRACKS[currentIndex].duration = fmt(audio.duration);
+    const meta = document.querySelector(`#track-${currentIndex} .track-meta`);
+    if (meta) meta.textContent =
+      TRACKS[currentIndex].duration + (TRACKS[currentIndex].pdf ? ' · includes reading' : '');
+  }
+});
+
+audio.addEventListener('ended', () => {
+  isPlaying = false;
+  updatePlayBtn();
+  if (currentIndex < TRACKS.length - 1) {
+    setTimeout(() => loadTrack(currentIndex + 1, true), 800);
+  }
+});
+
+progressBar.addEventListener('input', () => {
+  if (audio.duration) {
+    audio.currentTime = (progressBar.value / 100) * audio.duration;
+  }
+});
+
+function fmt(s) {
+  if (!isFinite(s)) return '—';
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+
+// ── PDF ───────────────────────────────────────────────────────
+function openPDF(filename, trackTitle) {
+  pdfSection.classList.add('visible');
+  document.getElementById('pdf-title').textContent = trackTitle + ' — Reading';
+  const container = document.getElementById('pdf-container');
+
+  // Try iframe first; browsers that block local file iframes get a fallback link
+  container.innerHTML = `
+    <iframe id="pdf-frame" src="${filename}" title="PDF Reading"></iframe>
+  `;
+
+  // If iframe fails to load (local file security), show a link fallback
+  const iframe = document.getElementById('pdf-frame');
+  iframe.onerror = () => showPDFFallback(filename, trackTitle);
+
+  // Also offer an open-in-new-tab link
+  container.insertAdjacentHTML('beforeend', `
+    <div style="text-align:right; margin-top:8px;">
+      <a href="${filename}" target="_blank" style="font-size:12px; color:var(--terracotta); font-family:'IM Fell English',serif; font-style:italic; text-decoration:underline;">
+        Open PDF in new tab ↗
+      </a>
+    </div>
+  `);
+
+  pdfSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function showPDFFallback(filename, trackTitle) {
+  document.getElementById('pdf-container').innerHTML = `
+    <div class="pdf-placeholder">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V9H10c.83 0 1.5.67 1.5 1.5v.5zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V9H15c.83 0 1.5.67 1.5 1.5v1zm4-3H19v1h1.5V11H19v2h-1.5V9h3v1.5zM9 10h1v-.5H9v.5zm5 0h1v-1h-1v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z"/>
+      </svg>
+      <span>${trackTitle} — Reading</span>
+      <a href="${filename}" target="_blank"
+         style="font-size:13px; color:var(--terracotta); text-decoration:underline; font-style:normal; font-family:'Lato',sans-serif;">
+        Open PDF ↗
+      </a>
+    </div>
+  `;
+}
+
+function closePDF() {
+  pdfSection.classList.remove('visible');
+  document.getElementById('pdf-container').innerHTML = '';
+}
+</script>
+</body>
+</html>
